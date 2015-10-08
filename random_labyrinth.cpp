@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <ctime> 
 
-// Copyright (C) 2011  Simone Riva
+// Copyright (C) 2015  Simone Riva
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
