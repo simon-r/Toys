@@ -179,6 +179,49 @@ public:
         return nd ;
     }
     
+    // http://www.geeksforgeeks.org/treap-a-randomized-binary-search-tree/
+    bool remove_treap( int value ) {
+        
+        if ( p_tree == 0 )
+            return false ;
+        
+        Node* nd = search_rec( this , p_tree , value ) ;
+        
+        if ( nd == 0 )
+            return false ;
+                
+        while( not nd->is_leaf() ) {
+            if ( nd->left() == 0 and nd->right() != 0 ) 
+                left_rotation( nd ) ;
+            else if ( nd->left() != 0 and nd->right() == 0 ) 
+                right_rotation( nd ) ;
+            else if ( nd->left()->get_rand_priority() > nd->right()->get_rand_priority() ) 
+                right_rotation( nd ) ;
+            else
+                left_rotation( nd ) ;        
+        }
+        
+        Node* parent ;
+        
+        if ( nd->is_leaf() ) {
+            
+            parent = nd->parent() ;
+            
+            if ( parent == 0 ) {
+                delete nd ;
+                p_tree = 0 ;  
+            } else {
+                if ( parent->left() == nd ) 
+                    parent->set_left( (Node*) 0  ) ;
+                else 
+                    parent->set_right( (Node*) 0  ) ;
+                delete nd ;
+            }
+        }
+        
+        return true ;
+    }
+    
     Node* head() {
         return p_tree ;
     }
@@ -296,8 +339,13 @@ public:
     bool search ( int value ) {
         if( p_tree == 0 ) 
             return false ;
-        else
-            return search_rec( this , p_tree , value ) ;   
+        else {
+            Node* n = search_rec( this , p_tree , value ) ;   
+            if ( n == 0 )
+                return false ;
+            else 
+                return true ;
+        }
     }
     
     int search_df( int value ) {
@@ -550,13 +598,13 @@ private:
         cout << ")" ;     
     }
     
-    bool search_rec ( Tree *t , Node *node , int value ) {
+    Node* search_rec ( Tree *t , Node *node , int value ) {
         
         if ( node == 0 ) 
-            return false ;
+            return 0 ;
         
         if ( node->value() == value )
-            return true ;
+            return node ;
         
         if ( value <= node->value() )
             return t->search_rec( t , node->left() , value ) ;
@@ -651,6 +699,16 @@ int main( void ) {
     cout << "-----" << endl ;
     tttt.print_tree() ;
     cout << "-----" << endl ;
+    
+    
+    for ( int i = 0 ; i < 10 ; i+= 3 ) {
+        tttt.remove_treap( rand()%100 ) ;
+    
+        tttt.print_tree_struct() ;
+        cout << "-----" << endl ;
+        tttt.print_tree() ;
+        cout << "-----" << endl ;
+    }
     
 }
 
