@@ -1,3 +1,19 @@
+// Copyright (C) 2015  Simone Riva
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 #include<iostream> 
 #include<vector>
 #include<list>
@@ -11,9 +27,13 @@
 #include <fstream>
 #include <string>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+
 
 #ifndef GRAPH_H
 #define GRAPH_H
+
+// g++ xxx.cpp -o xxx -lboost_system -lboost_regex -std=c++14
 
 using namespace std ;
 
@@ -26,10 +46,23 @@ public:
     
     void add_edge( int next_node ) {
         p_edges.push_back( next_node ) ;
+        
+        pm_edges[next_node] = true ;
+    }
+    
+    bool edge_exists( int next_node ) {
+        if ( pm_edges.find( next_node ) == pm_edges.end() )
+            return false ;
+        else
+            return true ;
     }
     
     void add_weighted_edge( int next_node , int w ) {
-        p_edges.push_back( next_node ) ;
+        add_edge ( next_node ) ;
+        set_weight( next_node , w ) ;
+    }
+    
+    void set_weight( int next_node , int w ) {
         p_weights[next_node] = w ;
     }
     
@@ -38,7 +71,7 @@ public:
     }
     
     int neighbour_cnt() {
-        return p_edges.size() ;
+        return pm_edges.size() ;
     }
     
     void unique_edges() {
@@ -57,7 +90,10 @@ public:
 private:
     
     int p_id ;
+    
     list<int> p_edges ;
+    
+    map<int,bool> pm_edges ;
     map<int,int> p_weights ;
 } ;
 
@@ -91,18 +127,27 @@ public:
         if ( p_graph.find( na ) == p_graph.end() )
             add_node( na ) ;
         
+        if ( p_graph.find( nb ) == p_graph.end() )
+            add_node( nb ) ;
+        
         p_graph[na].add_edge( nb ) ;
     }
     
     void add_weighted_edge( int na , int nb , int w ) {
-        if ( p_graph.find( na ) == p_graph.end() )
-            add_node( na ) ;
-        
-        p_graph[na].add_weighted_edge( nb , w ) ;
+        add_edge( na , nb ) ;
+        p_graph[na].set_weight( nb , w ) ;
+    }
+    
+    void set_weight(  int na , int nb , int w ) {
+        p_graph[na].set_weight( nb , w ) ;
     }
     
     int weight( int na , int nb ) {
         return get_node( na ).weight( nb ) ;
+    }
+    
+    bool edge_exists( int na , int nb ) {
+        return get_node( na ).edge_exists( nb ) ;
     }
     
     graph invert() {
@@ -226,6 +271,140 @@ private:
     list< list<int> > p_group ;
 } ;
 
+
+
+
+bool read_graph_file_adw( string file_name , list<graph> &res , int &origin , int &sink ) {
+    
+    string line;
+    ifstream myfile ( file_name );
+    
+    res.clear() ;
+    
+    if (myfile.is_open()) {
+        
+        int gr_cnt = 0 ;
+        graph gr ;
+        bool f = false ;
+        
+        int lcnt = 0 ;
+        
+        while ( getline ( myfile , line ) ) {
+            //             vector<string> strs ;
+            //             boost::split(strs, line, boost::is_any_of(" ")) ;
+            
+            string pattern = string( "(\\d+)" );
+            //             string pattern = string( "(\\d+)\\s*\\->\\s*(\\d+)(,(\\d+)){0,}" );
+            
+            boost::regex ip_regex(pattern);
+            
+            boost::sregex_iterator it(line.begin(), line.end(), ip_regex);
+            boost::sregex_iterator end;
+            
+            int i = 0 ;
+            int no , ns , w ;
+            
+            list<string> matchs ;
+            
+            for (; it != end; ++it) {    
+                matchs.push_back( it->str() ) ;                
+            }
+            
+            if( lcnt < 2 and matchs.size() == 1 ) {
+                
+                if ( lcnt == 0 ) 
+                    origin = stoi( *matchs.begin() ) ;
+                
+                if ( lcnt == 1 ) 
+                    sink = stoi( *matchs.begin() ) ;
+                
+            } else {
+                
+                auto itr = matchs.begin() ;
+                for ( ; itr != matchs.end() ; ) {
+                    
+                    if ( i == 0 ) {
+                        no = stoi( *itr ) ;
+                        ++itr ; 
+                    } else {
+                        ns = stoi( *itr ) ;
+                        ++itr ;
+                        w = stoi( (*itr) ) ;
+                        ++itr ;
+                        gr.add_weighted_edge( no , ns , w ) ;
+                    }
+                    i++ ;  
+                }
+                
+            }
+            
+            //cout << endl ;
+            lcnt++ ;
+        }
+        
+        res.push_back( gr ) ;
+    } else {
+        cout << "Unable to open file"; 
+        return false ;
+    }
+    
+    return true ;
+}
+
+
+
+list<graph> read_graph_file_ad( string file_name ) {
+    
+    string line;
+    ifstream myfile ( file_name );
+    
+    list<graph> res ;
+    
+    if (myfile.is_open()) {
+        
+        int gr_cnt = 0 ;
+        graph gr ;
+        bool f = false ;
+        
+        while ( getline ( myfile , line ) ) {
+            //             vector<string> strs ;
+            //             boost::split(strs, line, boost::is_any_of(" ")) ;
+            
+            string pattern = string( "(\\d+)" );
+            //             string pattern = string( "(\\d+)\\s*\\->\\s*(\\d+)(,(\\d+)){0,}" );
+            
+            boost::regex ip_regex(pattern);
+            
+            boost::sregex_iterator it(line.begin(), line.end(), ip_regex);
+            boost::sregex_iterator end;
+            
+            int i = 0 ;
+            int no , ns ;
+            
+            for (; it != end; ++it) {
+                
+                //cout << it->str() << " ";
+                
+                if ( i == 0 ) {
+                    no = stoi( it->str() ) ;
+                } else {
+                    ns = stoi( it->str() ) ;
+                    
+                    gr.add_edge( no , ns ) ;
+                }
+                i++ ;
+            }
+            
+            //cout << endl ;
+        }
+        
+        res.push_back( gr ) ;
+    } else {
+        cout << "Unable to open file"; 
+    }
+    
+    return res ;
+}
 
 list<graph> read_graph_file( string file_name ) {
     
