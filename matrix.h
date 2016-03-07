@@ -5,6 +5,7 @@
 #include <utility>
 #include <cstdlib>
 #include <ctime> 
+#include <tuple>
 
 // Copyright (C) 2015  Simone Riva
 // 
@@ -163,6 +164,10 @@ public:
     
     Type operator*() {
         return _matrix->get( _i , _j ) ;
+    }
+    
+    tuple< unsigned int , unsigned int > get_indices() {
+        return tuple< unsigned int , unsigned int >( _i , _j ) ;
     }
     
 private:
