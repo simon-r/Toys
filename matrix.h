@@ -56,8 +56,8 @@ public :
         _matrix.resize( rows*cols , def ) ;
     }
     
-    const unsigned int cols() { return _cols ; }
-    const unsigned int rows() { return _rows ; }
+    unsigned int cols() const { return _cols ; }
+    unsigned int rows() const { return _rows ; }
     
     const void print_matrix() {
         for ( int i = 0 ; i < _rows ; i++ ) {
@@ -72,7 +72,11 @@ public :
         _matrix[ p_indx(i,j) ] = el ;
     }
     
-    const Type get( unsigned int i , unsigned int j ) {
+    Type get( unsigned int i , unsigned int j ) const {
+        return _matrix[ p_indx(i,j) ] ;
+    }
+    
+    Type& operator() ( unsigned int i , unsigned int j ) {
         return _matrix[ p_indx(i,j) ] ;
     }
     
@@ -108,7 +112,7 @@ public :
     
 private :
     
-    inline unsigned int p_indx( unsigned int i , unsigned int j ) {
+    inline unsigned int p_indx( unsigned int i , unsigned int j ) const {
         if ( _t )
             return (_cols*i + j) ;
         else 
@@ -122,5 +126,64 @@ private :
     
     bool _t ;  
 } ; 
+
+
+template <class Type>
+class MatrixIterator {
+public:
+    
+    MatrixIterator( const Matrix<Type>& mat , bool end ) : _i(0) , _j(0) {
+        _matrix = &mat ;
+        
+        if ( end ) {
+            _i = _matrix->rows() ;
+        }
+    }
+    
+    bool operator!= ( const MatrixIterator<Type>& other ) {
+        
+        if ( _i >= _matrix->rows() ) {
+            return false ; // end point -> return false for stopping the iterator
+        }
+        
+        if ( _j == other._j and _i == other._i )
+            return false ;
+        else
+            return true ;
+    }
+    
+    MatrixIterator<Type>& operator++ () {
+        if ( _j < _matrix->cols() - 1 ) {
+            _j++ ;  
+        } else if ( _j >= _matrix->cols() - 1 ) {
+            _j = 0 ;
+            _i++ ;
+        }
+    }
+    
+    Type operator*() {
+        return _matrix->get( _i , _j ) ;
+    }
+    
+private:
+    
+    const Matrix<Type>* _matrix ;
+    
+    unsigned int _i ;
+    unsigned int _j ;
+} ;
+
+
+template <class Type>
+MatrixIterator<Type> begin( Matrix<Type>& mat ) {
+    
+    return MatrixIterator<Type>( mat , false ) ;
+}
+
+template <class Type>
+MatrixIterator<Type> end( Matrix<Type>& mat ) {
+    
+    return MatrixIterator<Type>( mat , true ) ;
+}
 
 #endif

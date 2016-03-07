@@ -12,6 +12,9 @@
 // g++ tree.cpp -o tree -std=c++14
 
 
+
+
+
 using namespace std ;
 
 class Node {
@@ -128,8 +131,69 @@ private:
     Node *p_parent ;
 } ;
 
+class Tree ;
+
+class tree_iterator {
+    
+public :
+    
+    tree_iterator( const Tree* t , bool f ) ;
+    
+    ~tree_iterator() {}
+    
+    bool operator!=(const tree_iterator& other) {
+        
+        if ( p_stn.size() == 0 and other.p_end or other.p_stn.size() == 0 and p_end ) {
+            return false ;   
+        } else if ( p_stn.size() == 0 and other.p_stn.size() == 0 ) {
+            return false ;
+        } else if ( p_end and other.p_end ) {
+            return false ;
+        } else if ( p_stn.size() > 0 and other.p_end or other.p_stn.size() > 0 and p_end ) {
+            return true ;
+        }
+        
+        Node* a = p_stn.top() ;
+        Node* b = other.p_stn.top() ;
+        
+        if ( a != b )
+            return true ;
+        else 
+            return false ;
+    }
+    
+    tree_iterator& operator++() {
+        if ( p_stn.size() == 0 ) {
+            p_end = true ;
+            return *this ;
+        }
+        
+        Node* nd = p_stn.top() ;
+        p_stn.pop() ;
+        
+        if ( nd->right() != 0 ) {
+            Node* rn = nd->right() ;
+            while( rn != 0 ) {
+                p_stn.push( rn ) ;
+                rn = rn->left() ;
+            }
+        }
+    }
+    
+    int operator*() const {
+        Node* nd = p_stn.top() ;
+        return nd->value() ;
+    }
+    
+private:
+    
+    bool p_end ;
+    stack<Node*> p_stn ;   
+};
+
 
 class Tree {
+    friend class tree_iterator ;
 public:
     Tree() {
         p_tree = 0 ;
@@ -142,6 +206,16 @@ public:
         }
         
         add_value_rec( this , p_tree , value ) ;
+    }
+    
+    tree_iterator begin() {
+        tree_iterator itr( this , true ) ;
+        return itr ;
+    }
+    
+    tree_iterator end() {
+        tree_iterator itr( this , false ) ;
+        return itr ;
     }
     
     // http://www.geeksforgeeks.org/treap-a-randomized-binary-search-tree/
@@ -616,6 +690,28 @@ private:
 } ;
 
 
+tree_iterator::tree_iterator( const Tree* t , bool f ) {
+    
+    p_end = false ;
+    
+    if ( not f ) { // begin
+        p_end = true ;
+        return ;
+    } 
+    
+    if ( t->p_tree == 0 ) {
+        p_end = true ;
+        return ;
+    }    
+    
+    Node* nd = t->p_tree ;
+    
+    do {
+        p_stn.push( nd ) ;
+        nd = nd->left() ;
+    } while( nd != 0 ) ;
+}
+
 
 int main( void ) {
     
@@ -701,14 +797,26 @@ int main( void ) {
     cout << "-----" << endl ;
     
     
-    for ( int i = 0 ; i < 10 ; i+= 3 ) {
-        tttt.remove_treap( rand()%100 ) ;
+    for ( int i = 0 ; i < 100 ; i+= 3 ) {
+        tttt.remove_treap( rand()%10 ) ;
     
         tttt.print_tree_struct() ;
         cout << "-----" << endl ;
         tttt.print_tree() ;
         cout << "-----" << endl ;
     }
+    
+    
+    cout << "---itr--" << endl ;
+    
+//     cout << "-----" << endl ;
+//         tttt.print_tree() ;
+//         cout << "-----" << endl ;
+    
+     for( int k : tttt ) {
+         cout << k << " " ;
+     }
+    cout << endl <<  "-----" << endl ;
     
 }
 
